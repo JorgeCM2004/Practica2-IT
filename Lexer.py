@@ -13,12 +13,21 @@ class CoolLexer(Lexer):
     tokens = {OBJECTID, INT_CONST, BOOL_CONST, TYPEID,
               ELSE, IF, FI, THEN, NOT, IN, CASE, ESAC, CLASS,
               INHERITS, ISVOID, LET, LOOP, NEW, OF,
-              POOL, THEN, WHILE, NUMBER, STR_CONST, LE, DARROW, ASSIGN}
+              POOL, THEN, WHILE, NUMBER, STR_CONST, LE, DARROW, ASSIGN, 
+              COMMENTMULTI, COMMENTSINGLE}
     #ignore = '\t '
-    literals = {}
+    literals = {'-': '-', '':'(*.**)'}
+
+    @_(r'(\*.*\*)')
+    def COMMENTMULTI(self, t):
+        self.lineno += 1
+
+    @_(r'--.*')
+    def COMMENTSINGLE(self, t):
+        self.lineno += 1
+    
     # Ejemplo
     ELSE = r'\b[eE][lL][sS][eE]\b'
-
     CARACTERES_CONTROL = [bytes.fromhex(i+hex(j)[-1]).decode('ascii')
                           for i in ['0', '1']
                           for j in range(16)] + [bytes.fromhex(hex(127)[-2:]).decode("ascii")]
@@ -31,7 +40,29 @@ class CoolLexer(Lexer):
     def newline(self, t):
         self.lineno += t.value.count('\n')
 
+    @_(r'\b[0-9][0-9]*')
+    def INT_CONST(self, t):
+        return t
+
+    @_(r't[rR][uU][eE]')
+    def BOOL_CONST(self, t):
+        t.value = 'true'
+        return t
     
+    @_(r'T[rR][uU][eE]')
+    def TYPEID(self, t):
+        return t
+
+    @_(r'\"[.]*\"')
+    def STR_CONST(self, t):
+        return t
+
+    @_(r'[A-Za-z]+')
+    def OBJECTID(self, t):
+        return t
+    
+    @_(r'[(][*][\d]*[*][)]')
+
     def error(self, t):
         self.index += 1
     #Fin Ejemplo
